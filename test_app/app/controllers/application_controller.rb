@@ -1,8 +1,8 @@
 class ApplicationController < ActionController::Base
   protect_from_forgery
-  before_filter :set_current_user
+  before_action :set_current_user
   helper_method :current_user
-  before_filter :set_locale
+  before_action :set_locale
 
   def current_user
     session[:user_id] ? User.find(session[:user_id]) : User.first
@@ -23,7 +23,6 @@ class ApplicationController < ActionController::Base
   end
 
   def default_url_options(options = {})
-    options.merge({:locale => I18n.locale})
+    options.merge(locale: I18n.locale)
   end
-
 end

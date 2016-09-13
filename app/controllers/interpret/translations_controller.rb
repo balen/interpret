@@ -1,7 +1,7 @@
 module Interpret
   class TranslationsController < Interpret::BaseController
-    before_filter :get_tree, :only => :index
-    authorize_resource :class => "Interpret::Translation"
+    before_filter :get_tree, only: :index
+    authorize_resource class: 'Interpret::Translation'
 
     def welcome
       redirect_to root_url
@@ -11,20 +11,20 @@ module Interpret
       key = params[:key]
       t = Interpret::Translation.arel_table
       if key
-        @translations = Interpret::Translation.allowed.locale(I18n.locale).where(t[:key].matches("#{CGI.escape(key)}.%")).order("translations.key ASC")
+        @translations = Interpret::Translation.allowed.locale(I18n.locale).where(t[:key].matches("#{CGI.escape(key)}.%")).order('translations.key ASC')
         if I18n.locale != I18n.default_locale
-          @references = Interpret::Translation.allowed.locale(I18n.default_locale).where(t[:key].matches("#{CGI.escape(key)}.%")).order("translations.key ASC")
+          @references = Interpret::Translation.allowed.locale(I18n.default_locale).where(t[:key].matches("#{CGI.escape(key)}.%")).order('translations.key ASC')
         end
       else
-        @translations = Interpret::Translation.allowed.locale(I18n.locale).where(t[:key].does_not_match("%.%")).order("translations.key ASC")
+        @translations = Interpret::Translation.allowed.locale(I18n.locale).where(t[:key].does_not_match('%.%')).order('translations.key ASC')
         if I18n.locale != I18n.default_locale
-          @references = Interpret::Translation.allowed.locale(I18n.default_locale).where(t[:key].does_not_match("%.%")).order("translations.key ASC")
+          @references = Interpret::Translation.allowed.locale(I18n.default_locale).where(t[:key].does_not_match('%.%')).order('translations.key ASC')
         end
       end
 
       # not show translations inside nested folders, \w avoids dots
-      @translations = @translations.select{|x| x.key =~ /#{key}\.\w+$/} if key
-      @references = @references.select{|x| x.key =~ /#{key}\.\w+$/} if key && @references
+      @translations = @translations.select { |x| x.key =~ /#{key}\.\w+$/ } if key
+      @references = @references.select { |x| x.key =~ /#{key}\.\w+$/ } if key && @references
 
       @total_keys_number = Interpret::Translation.locale(I18n.locale).count
     end
@@ -39,7 +39,7 @@ module Interpret
 
       respond_to do |format|
         if @translation.update_attributes(params[:translation].presence || params[:interpret_translation])
-          msg = ""
+          msg = ''
           msg << "By [#{current_interpret_user}]. " if current_interpret_user
           msg << "Locale: [#{@translation.locale}], key: [#{@translation.key}]. The translation has been changed from [#{old_value}] to [#{@translation.value}]"
           Interpret.logger.info msg
@@ -50,8 +50,8 @@ module Interpret
         else
           Interpret.logger.error "ERROR ON UPDATE: #{@translation.errors.inspect}"
           format.html { redirect_to :back }
-          format.xml  { render :xml => @translation.errors, :status => :unprocessable_entity }
-          format.json { render :status => :unprocessable_entity }
+          format.xml  { render xml: @translation.errors, status: :unprocessable_entity }
+          format.json { render status: :unprocessable_entity }
         end
       end
     end
@@ -63,7 +63,7 @@ module Interpret
         flash[:notice] = "New translation created for #{@translation.key}"
         redirect_to :back
       else
-        flash[:alert] = "Error when creating a new translation"
+        flash[:alert] = 'Error when creating a new translation'
         redirect_to :back
       end
     end
@@ -76,9 +76,14 @@ module Interpret
       redirect_to :back
     end
 
-  private
+    private
+
     def get_tree
       @tree ||= Interpret::Translation.get_tree
+    end
+
+    def translation_params
+      params.require(:translation).permit(:stale, :locale, :key, :value)
     end
   end
 end

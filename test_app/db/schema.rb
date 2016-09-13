@@ -9,22 +9,21 @@
 # from scratch. The latter is a flawed and unsustainable approach (the more migrations
 # you'll amass, the slower it'll run and the greater likelihood for issues).
 #
-# It's strongly recommended to check this file into your version control system.
+# It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(:version => 20111021100344) do
+ActiveRecord::Schema.define(version: 20111108094455) do
 
-  create_table "translations", :force => true do |t|
+  create_table "translations", force: :cascade do |t|
     t.string  "locale"
     t.string  "key"
     t.text    "value"
     t.text    "interpolations"
-    t.boolean "is_proc",        :default => false
-    t.boolean "protected",      :default => false
-    t.boolean "stale",          :default => false
+    t.boolean "is_proc",        default: false
+    t.boolean "stale",          default: false
   end
 
-  create_table "users", :force => true do |t|
-    t.boolean  "admin",      :default => false, :null => false
+  create_table "users", force: :cascade do |t|
+    t.boolean  "admin",      default: false, null: false
     t.datetime "created_at"
     t.datetime "updated_at"
   end

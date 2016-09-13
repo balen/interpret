@@ -5,7 +5,8 @@ class Interpret::BaseController < Interpret.parent_controller.classify.constanti
   layout 'interpret/interpret'
   helper Interpret::InterpretHelper
 
-protected
+  protected
+
   def current_interpret_user
     send(Interpret.current_user)
   end
@@ -15,11 +16,11 @@ protected
   end
 
   def default_url_options(options = {})
-    options.merge({:locale => I18n.locale})
+    options.merge(locale: I18n.locale)
   end
 
+  private
 
-private
   def set_locale
     I18n.locale = params[:locale] if params[:locale]
   end
@@ -28,4 +29,3 @@ private
     authorize! :use, :"interpret_in_#{I18n.locale}"
   end
 end
-

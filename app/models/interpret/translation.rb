@@ -1,18 +1,40 @@
 module Interpret
-
   class Translation < I18n::Backend::ActiveRecord::Translation
-    default_scope lambda {order(arel_table[:locale].asc)}
-    validates_uniqueness_of :key, :scope => :locale
+    # == Constants ============================================================
+
+    # == Attributes ===========================================================
+
+    # == Extensions ===========================================================
+
+    # == Relationships ========================================================
+
+    # == Validations ==========================================================
+    validates_uniqueness_of :key, scope: :locale
     validates_presence_of :locale
     validate :key_format
 
+    # == Scopes ===============================================================
+    default_scope -> { order(arel_table[:locale].asc) }
+    scope :stale, -> { where(stale: true) }
+
+    # == Callbacks ============================================================
     after_update :set_stale
+    after_update :expire_record, if: :value_changed?
+    after_create :expire_record
+    after_destroy :expire_record
     before_validation :downcase_key
-    attr_accessible :stale, :locale, :key, :value
 
-    scope :stale, lambda { where(:stale => true) }
+    # == Class Methods ========================================================
 
+    # == Instance Methods =====================================================
     private
+
+    # Expire the cache from the model, not from a observer.
+    # Rails 4+ doesn't have observers anymore
+    def expire_record
+      Interpret.backend.reload! if Interpret.backend
+      expire_cache(key)
+    end
 
     # If this translations is in the main language, mark this translation in
     # other languages as stale, so the translators know that they must change
@@ -20,7 +42,7 @@ module Interpret
     def set_stale
       return unless locale == I18n.default_locale.to_s
 
-      Translation.where(:key => key).where(Translation.arel_table[:locale].not_eq(locale)).update_all({:stale => true})
+      Translation.where(key: key).where(Translation.arel_table[:locale].not_eq(locale)).update_all(stale: true)
     end
 
     def downcase_key
@@ -28,34 +50,32 @@ module Interpret
     end
 
     def key_format
-      errors.add(:key, "has an invalid format") unless key =~ /^[a-zA-Z0-9\._\-]+$/
+      errors.add(:key, 'has an invalid format') unless key =~ /^[a-zA-Z0-9\._\-]+$/
     end
 
     class << self
-
       def allowed
-        s = order("")
+        s = order('')
         if Interpret.wild_blacklist.any?
-          black_keys = Interpret.wild_blacklist.map{|x| "#{CGI.escape(x)}%"}
+          black_keys = Interpret.wild_blacklist.map { |x| "#{CGI.escape(x)}%" }
           s = s.where(arel_table[:key].does_not_match_all(black_keys))
         end
         if Interpret.fixed_blacklist.any?
-          black_keys = Interpret.fixed_blacklist.map{|x| "#{CGI.escape(x)}"}
+          black_keys = Interpret.fixed_blacklist.map { |x| CGI.escape(x).to_s }
           s = s.where(arel_table[:key].does_not_match_all(black_keys))
         end
         s
       end
-
 
       # Generates a hash representing the tree structure of the translations
       # for the given locale. It includes only "folders" in the sense of
       # locale keys that includes some real translations, or other keys.
       def get_tree(lang = I18n.default_locale)
         t = arel_table
-        all_trans = locale(lang).select(t[:key]).where(t[:key].matches("%.%")).all
+        all_trans = locale(lang).select(t[:key]).where(t[:key].matches('%.%')).all
 
         tree = LazyHash.build_hash
-        all_trans = all_trans.map{|x| x.key.split(".")[0..-2].join(".")}.uniq
+        all_trans = all_trans.map { |x| x.key.split('.')[0..-2].join('.') }.uniq
         all_trans.each do |x|
           begin
             LazyHash.add(tree, x, {})
@@ -67,7 +87,7 @@ module Interpret
         # Generate a new clean hash without the proc's from LazyHash.
         # Includes a root level for convenience, to be exactly like the
         # structure of a .yml file which has the "en" root key for example.
-        {"index" => eval(tree.inspect)}
+        { 'index' => eval(tree.inspect) }
       end
 
       # Generate a hash from the given translations. That hash can be
@@ -79,7 +99,7 @@ module Interpret
           LazyHash.add(res, "#{e.locale}.#{e.key}", e.value)
         end
         if res.any? && res.keys.size != 1
-          raise IndexError, "Generated hash must have only one root key. Your translation data in database may be corrupted."
+          raise IndexError, 'Generated hash must have only one root key. Your translation data in database may be corrupted.'
         end
         res
       end
@@ -94,7 +114,7 @@ module Interpret
       # file.
       def import(file)
         hash = YAML.load File.open(file.path)
-        raise ArgumentError, "the YAML file must contain an unique first key representing the locale" unless hash.keys.count == 1
+        raise ArgumentError, 'the YAML file must contain an unique first key representing the locale' unless hash.keys.count == 1
 
         lang = hash.keys.first
 
@@ -119,7 +139,7 @@ module Interpret
       # If Interpret.soft is set to false, all existing translations will be
       # removed
       def dump
-        files = Dir[Rails.root.join("config", "locales", "*.yml").to_s]
+        files = Dir[Rails.root.join('config', 'locales', '*.yml').to_s]
         delete_all unless Interpret.soft
 
         records = []
@@ -131,7 +151,7 @@ module Interpret
 
         # TODO: Replace with activerecord-import bulk inserts
         transaction do
-          records.each {|x| x.save(:validate => false)}
+          records.each { |x| x.save(validate: false) }
         end
       end
 
@@ -194,13 +214,13 @@ module Interpret
       #   needed.
       #
       def update
-        files = Dir[Rails.root.join("config", "locales", "*.yml").to_s]
+        files = Dir[Rails.root.join('config', 'locales', '*.yml').to_s]
 
         @languages = {}
         files.each do |f|
           ar = YAML.load_file f
           lang = ar.keys.first
-          if @languages.has_key?(lang.to_s)
+          if @languages.key?(lang.to_s)
             @languages[lang.to_s] = @languages[lang.to_s].deep_merge(ar.first[1])
           else
             @languages[lang.to_s] = ar.first[1]
@@ -210,8 +230,9 @@ module Interpret
         sync(@languages[I18n.default_locale.to_s])
       end
 
-    private
-      def sync(hash, prefix = "", existing = nil)
+      private
+
+      def sync(hash, prefix = '', existing = nil)
         if existing.nil?
           translations = locale(I18n.default_locale).all
           existing = export(translations)
@@ -219,25 +240,23 @@ module Interpret
         end
 
         hash.keys.each do |x|
-          if hash[x].kind_of?(Hash)
+          if hash[x].is_a?(Hash)
             sync(hash[x], "#{prefix}#{x}.", existing[x])
           else
             existing.delete(x)
             old = locale(I18n.default_locale).find_by_key("#{prefix}#{x}")
 
-            unless old
-              # Creates the new entry
-              create_new_translation("#{prefix}#{x}", hash[x])
-            else
+            if old
               # Check if the entry exists in the other languages
               check_in_other_langs("#{prefix}#{x}")
+            else
+              # Creates the new entry
+              create_new_translation("#{prefix}#{x}", hash[x])
             end
           end
         end
 
-        if prefix.blank? && !Interpret.soft
-          remove_unused_keys(existing)
-        end
+        remove_unused_keys(existing) if prefix.blank? && !Interpret.soft
       end
 
       # Check if the given key exists in @languages for locales other than
@@ -245,59 +264,54 @@ module Interpret
       def check_in_other_langs(key)
         (@languages.keys - [I18n.default_locale]).each do |lang|
           trans = locale(lang).find_by_key(key)
-          if trans.nil?
-            if value = get_value_from_hash(@languages[lang], key)
-              foo = new( :locale => lang, :key => key, :value => value )
-              foo.save(:validate => false)
-              Interpret.logger.info "New key created [#{key}] for language [#{lang}]"
-            end
-          end
+          next unless trans.nil?
+          next unless value = get_value_from_hash(@languages[lang], key)
+          foo = new(locale: lang, key: key, value: value)
+          foo.save(validate: false)
+          Interpret.logger.info "New key created [#{key}] for language [#{lang}]"
         end
       end
 
       def get_value_from_hash(hash, key)
-        key.split(".")[0..-2].each do |k|
+        key.split('.')[0..-2].each do |k|
           break if hash.nil?
           hash = hash[k]
         end
-        hash.nil? ? nil : hash[key.split(".").last]
+        hash.nil? ? nil : hash[key.split('.').last]
       end
 
       def create_new_translation(missing_key, main_value)
-        foo = new(:locale => I18n.default_locale, :key => missing_key, :value => main_value)
-        foo.save(:validate => false)
+        foo = new(locale: I18n.default_locale, key: missing_key, value: main_value)
+        foo.save(validate: false)
         Interpret.logger.info "New key created [#{missing_key}] for language [#{I18n.default_locale}]"
 
         check_in_other_langs(missing_key)
       end
 
-      def remove_unused_keys(hash, prefix = "")
+      def remove_unused_keys(hash, prefix = '')
         hash.keys.each do |x|
-          if hash[x].kind_of?(Hash)
+          if hash[x].is_a?(Hash)
             remove_unused_keys(hash[x], "#{prefix}#{x}.")
           else
-            delete_all(:locale => @languages.keys, :key => "#{prefix}#{x}")
+            delete_all(locale: @languages.keys, key: "#{prefix}#{x}")
             Interpret.logger.info "Removing unused key #{prefix}#{x}"
           end
         end
       end
 
-      def parse_hash(dict, locale, prefix = "")
+      def parse_hash(dict, locale, prefix = '')
         res = []
         dict.keys.each do |x|
-          if dict[x].kind_of?(Hash)
+          if dict[x].is_a?(Hash)
             res += parse_hash(dict[x], locale, "#{prefix}#{x}.")
           else
-            res << new(:locale => locale,
-                       :key => "#{prefix}#{x}",
-                       :value => dict[x])
+            res << new(locale: locale,
+                       key: "#{prefix}#{x}",
+                       value: dict[x])
           end
         end
         res
       end
-
-
     end
   end
 end
-

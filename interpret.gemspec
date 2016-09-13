@@ -6,9 +6,9 @@ Gem::Specification.new do |s|
   s.name        = "interpret"
   s.version     = Interpret::VERSION
   s.platform    = Gem::Platform::RUBY
-  s.authors     = ["Roger Campos"]
+  s.authors     = ["Roger Campos", 'David Westerink']
   s.email       = ["roger@itnig.net"]
-  s.homepage    = "https://github.com/rogercampos/interpret"
+  s.homepage    = "https://github.com/davidakachaos/interpret"
   s.summary     = %q{Manage your app translations with an i18n active_record backend}
   s.description = %q{Manage your app translations with an i18n active_record backend}
 
@@ -19,7 +19,7 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  s.add_dependency "rails", ">= 3.1"
+  s.add_dependency "rails", "~> 4.0"
   s.add_dependency "i18n"
   s.add_dependency "i18n-active_record"
   s.add_dependency "ya2yaml"
@@ -28,7 +28,9 @@ Gem::Specification.new do |s|
   s.add_dependency "cancancan"
   s.add_dependency "jquery-rails"
 
-  s.add_development_dependency "rspec-rails"
+  s.add_development_dependency "rake"
+  s.add_development_dependency "rspec-rails", '~> 2.12.2'
   s.add_development_dependency "capybara"
   s.add_development_dependency "launchy"
+  s.add_development_dependency "simplecov"
 end

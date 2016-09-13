@@ -1,7 +1,9 @@
-require 'interpret/logger'
+require_relative './logger'
+require 'i18n/backend/active_record'
 
 module Interpret
   class Engine < Rails::Engine
+
     isolate_namespace Interpret
     engine_name "interpret"
 
@@ -27,13 +29,11 @@ module Interpret
       app.config.assets.precompile += %w(interpret_style.css interpret.js)
     end
 
-    initializer "interpret.register_observer" do |app|
-      #app.config.before_initialize do |app|
-        require 'active_record'
-        require 'i18n/backend/active_record'
-        ActiveRecord::Base.observers << Interpret.sweeper.to_sym if Interpret.sweeper && I18n::Backend::ActiveRecord::Translation.table_exists?
-        ActiveRecord::Base.observers << :"interpret/expiration_observer" if !Interpret.sweeper && I18n::Backend::ActiveRecord::Translation.table_exists?
-      #end
+    config.generators do |g|
+      g.test_framework :rspec, :fixture => false
+      g.assets false
+      g.helper false
     end
+
   end
 end

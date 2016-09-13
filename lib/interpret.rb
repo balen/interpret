@@ -1,6 +1,6 @@
 require 'best_in_place'
 require 'lazyhash'
-require 'cancan'
+require 'cancancan'
 
 module Interpret
   mattr_accessor :backend
@@ -41,4 +41,4 @@ module Interpret
   end
 end
 
-require 'interpret/engine' if defined? Rails
+require_relative '../lib/interpret/engine' if defined? Rails

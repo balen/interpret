@@ -6,7 +6,7 @@ class Interpret::ToolsController < Interpret::BaseController
 
     session.delete(:tree)
     Interpret.backend.reload! if Interpret.backend
-    redirect_to tools_url, :notice => "Dump done."
+    redirect_to tools_url, notice: 'Dump done.'
   end
 
   def export
@@ -16,32 +16,31 @@ class Interpret::ToolsController < Interpret::BaseController
     hash = Interpret::Translation.export(translations)
     text = hash.ya2yaml
 
-    send_data text[5..text.length], :filename => "#{I18n.locale}.yml", :type => "text/plain", :disposition => "attachment"
+    send_data text[5..text.length], filename: "#{I18n.locale}.yml", type: 'text/plain', disposition: 'attachment'
   end
 
   def run_update
     Interpret::Translation.update
     Interpret.backend.reload! if Interpret.backend
-    redirect_to tools_url, :notice => "Update done"
+    redirect_to tools_url, notice: 'Update done'
   end
 
   def import
-    unless params.has_key? :file
-      redirect_to tools_url, :alert => "You have to select a file to import."
+    unless params.key? :file
+      redirect_to tools_url, alert: 'You have to select a file to import.'
       return
     end
 
     begin
       Interpret::Translation.import(params[:file])
     rescue Exception => e
-      redirect_to tools_url, :alert => "Error when importing: #{e.message}"
+      redirect_to tools_url, alert: "Error when importing: #{e.message}"
       return
     end
 
     session.delete(:tree)
     Interpret.backend.reload! if Interpret.backend
 
-    redirect_to tools_url, :notice => "Import successfully done."
+    redirect_to tools_url, notice: 'Import successfully done.'
   end
 end
-

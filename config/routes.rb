@@ -1,12 +1,12 @@
 Interpret::Engine.routes.draw do
-  scope ":locale" do
-    resources :translations, :only => [:destroy, :edit, :update, :create] do
+  scope ':locale' do
+    resources :translations, only: [:destroy, :edit, :update, :create] do
       collection do
         get :live_edit
       end
     end
 
-    resources :tools, :only => :index do
+    resources :tools, only: :index do
       collection do
         get :export
         post :import
@@ -15,14 +15,14 @@ Interpret::Engine.routes.draw do
       end
     end
 
-    match "search", :to => "search#index"
+    post 'search', to: 'search#index'
     resources :missing_translations
-    match "blank", :to => "missing_translations#blank", :as => "blank_translations"
-    match "unused", :to => "missing_translations#unused", :as => "unused_translations"
-    match "stale", :to => "missing_translations#stale", :as => "stale_translations"
+    get 'blank', to: 'missing_translations#blank', as: 'blank_translations'
+    get 'unused', to: 'missing_translations#unused', as: 'unused_translations'
+    get 'stale', to: 'missing_translations#stale', as: 'stale_translations'
 
-    root :to => "translations#index"
+    root to: 'translations#index'
   end
 
-  match "/", :to => "translations#welcome"
+  get '/', to: 'translations#welcome'
 end
