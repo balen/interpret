@@ -15,7 +15,7 @@ Interpret::Engine.routes.draw do
       end
     end
 
-    post 'search', to: 'search#index'
+    match 'search', to: 'search#index'
     resources :missing_translations
     get 'blank', to: 'missing_translations#blank', as: 'blank_translations'
     get 'unused', to: 'missing_translations#unused', as: 'unused_translations'
