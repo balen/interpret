@@ -19,9 +19,6 @@ module Interpret
 
     # == Callbacks ============================================================
     after_update :set_stale
-    after_update :expire_record, if: :value_changed?
-    after_create :expire_record
-    after_destroy :expire_record
     before_validation :downcase_key
 
     # == Class Methods ========================================================
@@ -31,10 +28,10 @@ module Interpret
 
     # Expire the cache from the model, not from a observer.
     # Rails 4+ doesn't have observers anymore
-    def expire_record
-      Interpret.backend.reload! if Interpret.backend
-      expire_cache(key)
-    end
+    # def expire_record
+      # Interpret.backend.reload! if Interpret.backend
+      # expire_cache(key)
+    # end
 
     # If this translations is in the main language, mark this translation in
     # other languages as stale, so the translators know that they must change
