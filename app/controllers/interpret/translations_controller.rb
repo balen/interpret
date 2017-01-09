@@ -38,7 +38,7 @@ module Interpret
       old_value = @translation.value
 
       respond_to do |format|
-        if @translation.update_attributes(params[:translation].presence || params[:interpret_translation])
+        if @translation.update_attributes translation_params #(params[:translation].presence || params[:interpret_translation])
           msg = ''
           msg << "By [#{current_interpret_user}]. " if current_interpret_user
           msg << "Locale: [#{@translation.locale}], key: [#{@translation.key}]. The translation has been changed from [#{old_value}] to [#{@translation.value}]"
@@ -57,7 +57,7 @@ module Interpret
     end
 
     def create
-      @translation = Interpret::Translation.new params[:translation]
+      @translation = Interpret::Translation.new translation_params #params[:translation]
 
       if @translation.save
         flash[:notice] = "New translation created for #{@translation.key}"
