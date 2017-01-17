@@ -28,10 +28,10 @@ module Interpret
 
     # Expire the cache from the model, not from a observer.
     # Rails 4+ doesn't have observers anymore
-    # def expire_record
-      # Interpret.backend.reload! if Interpret.backend
-      # expire_cache(key)
-    # end
+    def expire_record
+      Interpret.backend.reload! if Interpret.backend
+      expire_cache(key)
+    end
 
     # If this translations is in the main language, mark this translation in
     # other languages as stale, so the translators know that they must change
