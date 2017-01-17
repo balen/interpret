@@ -26,7 +26,7 @@
         <td><%= ref.value %></td>
         <td class='content' id='translation_<%= trans.id %>'>
             <%= best_in_place trans, :value,
-                :type => :textarea,
+                :as => :textarea,
                 :path => translation_path(trans),
                 :activator => "#translation_#{trans.id}",
                 :sanitize => false %>

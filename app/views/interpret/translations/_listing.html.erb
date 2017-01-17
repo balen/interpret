@@ -17,7 +17,7 @@
           <td class='key'><%= x.key %></td>
           <td class="content" id="translation_<%= x.id %>">
             <%= best_in_place x, :value,
-                :type => :textarea,
+                :as => :textarea,
                 :path => translation_path(x),
                 :sanitize => false %>
           </td>
@@ -32,7 +32,7 @@
           <td style='width:50%'>
             <% if trans %>
               <%= best_in_place trans, :value,
-                  :type => :textarea,
+                  :as => :textarea,
                   :path => translation_path(trans),
                   :sanitize => false %>
             <% else %>
